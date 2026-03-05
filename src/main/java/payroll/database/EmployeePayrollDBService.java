@@ -38,6 +38,65 @@ public class EmployeePayrollDBService {
         System.out.println("\nPayroll Statistics by Gender:");
 
         employeePayrollDBService.getSalaryStatisticsByGender();
+
+        System.out.println("\nUpdating salary using transaction...");
+
+        employeePayrollDBService.updateSalaryWithTransaction("Charlie", 4000000);
+
+        employeePayrollDBService.readData()
+                .forEach(System.out::println);
+    }
+
+
+    public void updateSalaryWithTransaction(String name, double salary) {
+
+        Connection connection = null;
+
+        try {
+
+            connection = DriverManager.getConnection(
+                    "jdbc:mysql://localhost:3306/payroll_service",
+                    "root",
+                    "Root@123");
+
+            connection.setAutoCommit(false); // start transaction
+
+            String updateQuery = "UPDATE employee_payroll SET salary = ? WHERE name = ?";
+
+            PreparedStatement preparedStatement =
+                    connection.prepareStatement(updateQuery);
+
+            preparedStatement.setDouble(1, salary);
+            preparedStatement.setString(2, name);
+
+            preparedStatement.executeUpdate();
+
+            connection.commit(); // commit transaction
+
+            System.out.println("Transaction committed successfully.");
+
+        } catch (SQLException e) {
+
+            try {
+                if (connection != null) {
+                    connection.rollback(); // rollback if error
+                    System.out.println("Transaction rolled back.");
+                }
+            } catch (SQLException rollbackException) {
+                rollbackException.printStackTrace();
+            }
+
+            e.printStackTrace();
+
+        } finally {
+
+            try {
+                if (connection != null)
+                    connection.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private static void listDrivers() {
